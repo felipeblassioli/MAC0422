@@ -12,6 +12,7 @@
 int g_debug = 1;
 int g_line_count;
 int g_total_cpus;
+int g_context_switch_count;
 struct timeval g_start;
 
 double current_time(){
@@ -75,7 +76,7 @@ void realTimeOperation(void *args) {
 	ProcessControlBlock *proc = (ProcessControlBlock *)args;
 
 	proc->state = RUNNING;
-	if(g_debug) fprintf(stderr, "[%.4f] proc [%d-%s] started using CPU %d.\n", current_time(), proc->id, proc->info->process_name, proc->cpu);
+	if(g_debug) fprintf(stderr, "[%.2f] proc [%d-%s] started using CPU %d.\n", current_time_s(), proc->id, proc->info->process_name, proc->cpu);
 
 	double elapsed, et0;
 	double start;
@@ -88,10 +89,10 @@ void realTimeOperation(void *args) {
 	} while(proc->state == RUNNING && remaining_time(proc) > 0);
 
 	if(proc->state != RUNNING){
-		if(g_debug) fprintf(stderr, "[%.4f] proc [%d-%s] released CPU %d. (INTERRUPTED)\n", current_time(), proc->id, proc->info->process_name, proc->cpu);
+		if(g_debug) fprintf(stderr, "[%.2f] proc [%d-%s] released CPU %d. (INTERRUPTED)\n", current_time_s(), proc->id, proc->info->process_name, proc->cpu);
 	}else{
 		proc->tf = current_time();
-		if(g_debug) fprintf(stderr, "[%.4f] proc [%d-%s] released CPU %d.\n", proc->tf, proc->id, proc->info->process_name, proc->cpu);
+		if(g_debug) fprintf(stderr, "[%.2f] proc [%d-%s] released CPU %d.\n", current_time_s(), proc->id, proc->info->process_name, proc->cpu);
 		enqueue(&g_event_queue, EVT_EXITED, (void *)proc);
 	}
 }
@@ -110,9 +111,9 @@ void dispatch_process(ProcessControlBlock *proc, int cpu, int *context_switch_co
 
 	if(last_evt_type == EVT_INTERRUPT){
 		(*context_switch_count)++;
-		fprintf(stderr, "[%.4f] EVT_DISPATCH: proc [%d-%s] assigned to CPU %d. (context_switch_count=%d)\n", current_time(), proc->id, proc->info->process_name, proc->cpu, (*context_switch_count));
+		if(g_debug) fprintf(stderr, "[%.2f] EVT_DISPATCH: proc [%d-%s] assigned to CPU %d. (context_switch_count=%d)\n", current_time_s(), proc->id, proc->info->process_name, proc->cpu, (*context_switch_count));
 	} else if(g_debug){ 
-		fprintf(stderr, "[%.4f] EVT_DISPATCH: proc [%d-%s] assigned to CPU %d.\n", current_time(), proc->id, proc->info->process_name, proc->cpu);
+		fprintf(stderr, "[%.2f] EVT_DISPATCH: proc [%d-%s] assigned to CPU %d.\n", current_time_s(), proc->id, proc->info->process_name, proc->cpu);
 	}
 }
 
@@ -125,7 +126,7 @@ double remaining_time(ProcessControlBlock *b){
 void interrupt_process(ProcessControlBlock *proc){
 	assert( proc->state == RUNNING );
 
-	if(g_debug) fprintf(stderr, "[%.4f] EVT_INTERRUPT: proc [%d-%s] must release CPU %d.\n", current_time(), proc->id, proc->info->process_name, proc->cpu);
+	if(g_debug) fprintf(stderr, "[%.2f] EVT_INTERRUPT: proc [%d-%s] must release CPU %d.\n", current_time_s(), proc->id, proc->info->process_name, proc->cpu);
 	proc->state = READY;
 	ll_remove(&g_running_processes, proc->id);
 	ll_insert_beginning(&g_ready_processes, proc);
@@ -142,7 +143,6 @@ void run_scheduler(void *args){
 	
 	int trace_file_read = 0;
 	int running = 1;
-	int context_switch_count = 0;
 	Event *evt;
 	ProcessControlBlock *proc;
 	TraceInfo *trace_info;
@@ -156,7 +156,7 @@ void run_scheduler(void *args){
 		g_scheduler->init(&g_ready_processes, &g_running_processes, &g_event_queue);
 	while(running){
 		evt = dequeue(&g_event_queue);
-		cur_time = current_time();
+		cur_time = current_time_s();
 		switch(evt->type){
 			case EVT_NONE:
 				break;
@@ -173,7 +173,7 @@ void run_scheduler(void *args){
 					proc->info = trace_info;
 					proc->et = 0.0;
 
-					if(g_debug) fprintf(stderr, "[%.4f] EVT_NEW: proc [%d-%s] from line [%d] arrived.\n", cur_time, proc->id, proc->info->process_name, proc->info->line);
+					if(g_debug) fprintf(stderr, "[%.2f] EVT_NEW: proc [%d-%s] from line [%d] arrived.\n", cur_time, proc->id, proc->info->process_name, proc->info->line);
 
 					proc_batch[i] = proc;
 				}
@@ -203,7 +203,7 @@ void run_scheduler(void *args){
 
 				interrupt_process(cs_payload->old);
 				last_evt_type = EVT_INTERRUPT;
-				dispatch_process(cs_payload->new, cs_payload->cpu, &context_switch_count, last_evt_type);
+				dispatch_process(cs_payload->new, cs_payload->cpu, &g_context_switch_count, last_evt_type);
 
 				free(cs_payload);
 				break;
@@ -213,7 +213,7 @@ void run_scheduler(void *args){
 
 				ll_remove(&g_running_processes, proc->id);
 				ll_insert_beginning(&g_finished_processes, proc);
-				if(g_debug) fprintf(stderr, "[%.4f] EVT_EXITED: proc [%d-%s] released CPU %d.\n", cur_time, proc->id, proc->info->process_name, proc->cpu);
+				if(g_debug) fprintf(stderr, "[%.2f] EVT_EXITED: proc [%d-%s] released CPU %d.\n", cur_time, proc->id, proc->info->process_name, proc->cpu);
 
 				running = !(trace_file_read && (g_line_count == g_finished_processes.size));
 
@@ -225,7 +225,7 @@ void run_scheduler(void *args){
 			case EVT_DISPATCH:
 				proc = evt->payload;
 
-				dispatch_process(proc, proc->cpu, &context_switch_count, last_evt_type);
+				dispatch_process(proc, proc->cpu, &g_context_switch_count, last_evt_type);
 				break;
 			case EVT_STOP:
 				//running = 0;
@@ -330,9 +330,11 @@ void parse_tracefile(char *filename) {
 
 void init_globals(){
 	g_line_count = 0;
-	g_total_cpus = 2;
-	//g_total_cpus = sysconf(_SC_NPROCESSORS_ONLN);
+	g_context_switch_count = 0;
+	if(g_total_cpus == 0)
+		g_total_cpus = sysconf(_SC_NPROCESSORS_ONLN);
 	assert( g_total_cpus <= MAX_CPU_NUMBER);
+	printf("CPU_COUNT=%d\n", g_total_cpus);
 
 	EventQueue_init(&g_event_queue);
 
@@ -357,8 +359,10 @@ void write_output_trace_file(char *filename){
 			proc = cur->data;
 			tf = proc->tf/1000000.0;
 			tr = tf - proc->info->t0;
-			fprintf(fp, "%s %.4f %.4f\n", proc->info->process_name, tf, tr);
+			fprintf(fp, "%s %.2f %.2f\n", proc->info->process_name, tf, tr);
 		}
+		fprintf(fp, "%d\n", g_context_switch_count);
+		fclose(fp);
 	}else{
 		fprintf(stderr, "ERROR: couldnt write output file to %s.\n", filename);
 		exit(1);
@@ -367,7 +371,7 @@ void write_output_trace_file(char *filename){
 
 void run_simulation(int scheduler_type, char *input_filename, char *output_filename){
 	pthread_t scheduler_thread;
-	g_scheduler = &g_scheduler_algorithms[scheduler_type];
+	g_scheduler = &g_scheduler_algorithms[scheduler_type-1];
 	
 	init_globals();
 	pthread_create(&scheduler_thread, NULL, (void *)run_scheduler, NULL);
@@ -382,6 +386,15 @@ int main(int argc, char **argv){
 	int scheduler_type = atoi(argv[1]);
 	char *input_filename = argv[2];
 	char *output_filename = argv[3];
+	if(argc >= 5){
+		g_debug = (argv[4][0] == 'd');
+	} else{
+		g_debug = 0;
+	}
+	if(argc >= 6)
+		g_total_cpus = atoi(argv[5]);
+	else
+		g_total_cpus = 0;
 
 	run_simulation(scheduler_type, input_filename, output_filename);
 
