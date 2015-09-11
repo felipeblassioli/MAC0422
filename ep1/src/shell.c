@@ -39,11 +39,15 @@ typedef struct {
 int com_cd (char *);
 int com_pwd (char *);
 int com_ls (char *);
+int com_ep1 (char *); 
 
 COMMAND g_commands[] = {
 	{ "cd", com_cd, "Change to directory DIR" },
 	{ "pwd", com_pwd, "Print the current working directory" },
-	{ "ls", com_ls, "List files in DIR" }
+	{ "ls", com_ls, "List files in DIR" },
+	{ "/bin/ls", com_ls, "List files in DIR" },
+	{ "./ep1", com_ep1, "Process Scheduling Simulation" },
+	{ "ep1", com_ep1, "Process Scheduling Simulation" },
 };
 
 int is_whitespace(char c)
@@ -113,6 +117,32 @@ int com_pwd (char *arg){
 
 	printf("%s\n", get_working_directory());
 
+	return 1;
+}
+
+static char a[128], b[128], c[128], d[128];
+int com_ep1 (char *arg){
+	int i;
+	int argc;
+
+	argc = sscanf(arg, "%s %s %s %s", a,b,c,d);
+	printf("argc = %d\n", argc);
+
+	pid_t parent = getpid();
+	pid_t pid = fork();
+
+	if(pid == -1){
+		fprintf(stderr, "FATAL: failed to fork.\n");
+		exit(2);
+	}
+	else if(pid > 0){
+			int status;
+			waitpid(pid, &status, 0);
+	} else {
+		char *argv[] = { "./ep1", a,b,c,d, 0 };
+		char *envp[] = { 0 };
+		execve(argv[0], &argv[0], envp);
+	}
 	return 1;
 }
 
