@@ -104,10 +104,10 @@ void preemptive_dispatch(LinkedList *ready_processes, LinkedList *running_proces
 	ll_copy(&_ready_processes, ready_processes);
 	ll_copy(&_running_processes, running_processes);
 
-	printf("RUNNING PROCESSES"); ll_print(&_running_processes);
-	printf("READY PROCESSES"); ll_print(&_ready_processes);
+	/*printf("RUNNING PROCESSES"); ll_print(&_running_processes);*/
+	/*printf("READY PROCESSES"); ll_print(&_ready_processes);*/
 	cpu = get_non_used_cpu(&_running_processes);
-	printf("FREE CPU = %d\n", cpu);
+	/*printf("FREE CPU = %d\n", cpu);*/
 	while(cpu != -1){
 		//proc1 = srtn_choose_min(&_ready_processes);
 		proc1 = choose_min(&_ready_processes, &_running_processes, lt_func);
@@ -115,8 +115,8 @@ void preemptive_dispatch(LinkedList *ready_processes, LinkedList *running_proces
 		ll_remove(&_ready_processes, proc1->id);
 		ll_insert_beginning(&_running_processes, proc1);
 
-		printf("\tchosen [%d-%s] to cpu %d.\n", proc1->id, proc1->info->process_name, proc1->cpu);
-		ll_print(&_ready_processes);
+		/*printf("\tchosen [%d-%s] to cpu %d.\n", proc1->id, proc1->info->process_name, proc1->cpu);*/
+		/*ll_print(&_ready_processes);*/
 		enqueue(event_queue, EVT_DISPATCH, (void *)proc1);
 
 		if(_ready_processes.size == 0)
@@ -128,7 +128,7 @@ void preemptive_dispatch(LinkedList *ready_processes, LinkedList *running_proces
 	EventContextSwitchPayload *context_switch_args;
 	ProcessControlBlock *best_candidate;
 
-	printf("\nReplace someone?\n");
+	/*printf("\nReplace someone?\n");*/
 	do{
 		/*proc1 = srtn_choose_min(&_ready_processes);*/
 		best_candidate = (ProcessControlBlock *)NULL;
@@ -139,7 +139,7 @@ void preemptive_dispatch(LinkedList *ready_processes, LinkedList *running_proces
 			break;
 		cur = _running_processes.head;
 		/*printf("\ttesting [%d-%s] with rt = %f\n", proc1->id, proc1->info->process_name, remaining_time(proc1));*/
-		printf("\ttesting [%d-%s]\n", proc1->id, proc1->info->process_name);
+		/*printf("\ttesting [%d-%s]\n", proc1->id, proc1->info->process_name);*/
 		while(cur->next){
 			cur = cur->next;
 			proc2 = cur->data;
@@ -154,7 +154,7 @@ void preemptive_dispatch(LinkedList *ready_processes, LinkedList *running_proces
 			}
 		}
 		if(best_candidate){
-			printf("\t\t\treplacing [%d-%s]\n", best_candidate->id, best_candidate->info->process_name);
+			/*printf("\t\t\treplacing [%d-%s]\n", best_candidate->id, best_candidate->info->process_name);*/
 			context_switch_args = malloc(sizeof(*context_switch_args));
 			context_switch_args->old = proc2;
 			context_switch_args->new = proc1;
@@ -271,8 +271,8 @@ void rr_send_interrupt(void *args){
 void rr_loop(void *args){
 	int i;
 	RRLoopArgs *thread_args = args;
-	LinkedList *ready_processes = thread_args->ready_processes;
-	LinkedList *running_processes = thread_args->running_processes;
+	/*LinkedList *ready_processes = thread_args->ready_processes;*/
+	/*LinkedList *running_processes = thread_args->running_processes;*/
 	EventQueue *event_queue = thread_args->event_queue;
 	int quantum_ms = 500;
 	pthread_t interrupt_threads[256];
@@ -285,20 +285,20 @@ void rr_loop(void *args){
 		//wait for cpu
 		sem_wait(&rr_cpu_available);		
 		do {
-			printf("HERE ");
-			printf("rr_queue = ");
-			ll_print(&rr_queue);	
-			printf("RUNING processes");
-			ll_print(running_processes);
-			printf("READY processes");
-			ll_print(ready_processes);
+			/*printf("HERE ");*/
+			/*printf("rr_queue = ");*/
+			/*ll_print(&rr_queue);	*/
+			/*printf("RUNING processes");*/
+			/*ll_print(running_processes);*/
+			/*printf("READY processes");*/
+			/*ll_print(ready_processes);*/
 			proc = ll_remove_index(&rr_queue, 0);
-			printf(">THRE rr_queue = ");
-			ll_print(&rr_queue);	
-			printf(">RUNING processes");
-			ll_print(running_processes);
-			printf(">READY processes");
-			ll_print(ready_processes);
+			/*printf(">THRE rr_queue = ");*/
+			/*ll_print(&rr_queue);	*/
+			/*printf(">RUNING processes");*/
+			/*ll_print(running_processes);*/
+			/*printf(">READY processes");*/
+			/*ll_print(ready_processes);*/
 		} while( proc->state != READY);
 		//assert( proc->state == READY );
 		/*printf("REMOVE [%d-%s]\n", proc->id, proc->info->process_name);*/
@@ -334,36 +334,36 @@ void rr_init(LinkedList *ready_processes, LinkedList *running_processes, EventQu
 }
 
 void rr_on_ready(ProcessControlBlock **proc_batch, int batch_size, LinkedList *ready_processes, LinkedList *running_processes, EventQueue *event_queue){
-	printf("RR_ON_READY BEGIN\n");
+	/*printf("RR_ON_READY BEGIN\n");*/
 	ll_insert_last_batch(&rr_queue, proc_batch, batch_size);
-	printf("RR_QUEUE"); ll_print(&rr_queue);
-	printf("RR_ON_READY END\n");
+	/*printf("RR_QUEUE"); ll_print(&rr_queue);*/
+	/*printf("RR_ON_READY END\n");*/
 }
 
 void rr_on_exit(ProcessControlBlock *evt_proc, LinkedList *ready_processes, LinkedList *running_processes, EventQueue *event_queue){
-	printf("RR_ON_EXIT BEGIN\n");
-	LLNode *node = ll_find(&rr_queue, evt_proc->id);
-	if(node){
-		printf("REMOVING above\n");
-		ll_remove(&rr_queue, evt_proc->id);
-	}
-	else{
-		printf("NOT FOUND [%d-%s]\n", evt_proc->id, evt_proc->info->process_name);
-	}
+	/*printf("RR_ON_EXIT BEGIN\n");*/
+	/*LLNode *node = ll_find(&rr_queue, evt_proc->id);*/
+	/*if(node){*/
+		/*[>printf("REMOVING above\n");<]*/
+		/*ll_remove(&rr_queue, evt_proc->id);*/
+	/*}*/
+	/*else{*/
+		/*printf("NOT FOUND [%d-%s]\n", evt_proc->id, evt_proc->info->process_name);*/
+	/*}*/
 
-	printf("RR_QUEUE");
-	ll_print(&rr_queue);
+	/*printf("RR_QUEUE");*/
+	/*ll_print(&rr_queue);*/
 
 	rr_cpu[evt_proc->cpu] = 1;
 	sem_post(&rr_cpu_available);
-	printf("RR_ON_EXIT END\n");
+	/*printf("RR_ON_EXIT END\n");*/
 }
 
 void rr_on_interrupt(ProcessControlBlock *evt_proc, LinkedList *ready_processes, LinkedList *running_processes, EventQueue *event_queue){
-	printf("RR_ON_INTERRUPT BEGIN\n");
+	/*printf("RR_ON_INTERRUPT BEGIN\n");*/
 	rr_cpu[evt_proc->cpu] = 1;
 	sem_post(&rr_cpu_available);
-	printf("RR_ON_INTERRUPT END\n");
+	/*printf("RR_ON_INTERRUPT END\n");*/
 }
 
 /* Priority Scheduling */

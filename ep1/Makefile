@@ -9,7 +9,6 @@ SRCDIR=src
 _OBJ=utils.o event_queue.o linked_list.o algorithms.o simulator.o
 OBJ=$(patsubst %,$(ODIR)/%,$(_OBJ))
 
-#.PHONY: clean
 all: ep1sh ep1
 
 ep1sh: 
@@ -20,3 +19,7 @@ $(ODIR)/%.o: $(SRCDIR)/%.c
 
 ep1: $(OBJ)
 	$(CC) -o $@ $^ $(CFLAGS) $(LDFLAGS)
+
+.PHONY: clean
+clean:
+	rm ep1 ep1sh obj/*
