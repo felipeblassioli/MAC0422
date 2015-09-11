@@ -50,8 +50,6 @@ void nonpreemptive_dispatch(LinkedList *ready_processes, LinkedList *running_pro
 		ll_remove(&_ready_processes, proc->id);
 		ll_insert_beginning(&_running_processes, proc);
 
-		/*printf("\tchosen [%d-%s] to cpu %d.\n", proc->id, proc->info->process_name, proc->cpu);*/
-		/*ll_print(&_ready_processes);*/
 		enqueue(event_queue, EVT_DISPATCH, (void *)proc);
 
 		if(_ready_processes.size == 0)
@@ -285,20 +283,7 @@ void rr_loop(void *args){
 		//wait for cpu
 		sem_wait(&rr_cpu_available);		
 		do {
-			/*printf("HERE ");*/
-			/*printf("rr_queue = ");*/
-			/*ll_print(&rr_queue);	*/
-			/*printf("RUNING processes");*/
-			/*ll_print(running_processes);*/
-			/*printf("READY processes");*/
-			/*ll_print(ready_processes);*/
 			proc = ll_remove_index(&rr_queue, 0);
-			/*printf(">THRE rr_queue = ");*/
-			/*ll_print(&rr_queue);	*/
-			/*printf(">RUNING processes");*/
-			/*ll_print(running_processes);*/
-			/*printf(">READY processes");*/
-			/*ll_print(ready_processes);*/
 		} while( proc->state != READY);
 		//assert( proc->state == READY );
 		/*printf("REMOVE [%d-%s]\n", proc->id, proc->info->process_name);*/
@@ -334,36 +319,17 @@ void rr_init(LinkedList *ready_processes, LinkedList *running_processes, EventQu
 }
 
 void rr_on_ready(ProcessControlBlock **proc_batch, int batch_size, LinkedList *ready_processes, LinkedList *running_processes, EventQueue *event_queue){
-	/*printf("RR_ON_READY BEGIN\n");*/
 	ll_insert_last_batch(&rr_queue, proc_batch, batch_size);
-	/*printf("RR_QUEUE"); ll_print(&rr_queue);*/
-	/*printf("RR_ON_READY END\n");*/
 }
 
 void rr_on_exit(ProcessControlBlock *evt_proc, LinkedList *ready_processes, LinkedList *running_processes, EventQueue *event_queue){
-	/*printf("RR_ON_EXIT BEGIN\n");*/
-	/*LLNode *node = ll_find(&rr_queue, evt_proc->id);*/
-	/*if(node){*/
-		/*[>printf("REMOVING above\n");<]*/
-		/*ll_remove(&rr_queue, evt_proc->id);*/
-	/*}*/
-	/*else{*/
-		/*printf("NOT FOUND [%d-%s]\n", evt_proc->id, evt_proc->info->process_name);*/
-	/*}*/
-
-	/*printf("RR_QUEUE");*/
-	/*ll_print(&rr_queue);*/
-
 	rr_cpu[evt_proc->cpu] = 1;
 	sem_post(&rr_cpu_available);
-	/*printf("RR_ON_EXIT END\n");*/
 }
 
 void rr_on_interrupt(ProcessControlBlock *evt_proc, LinkedList *ready_processes, LinkedList *running_processes, EventQueue *event_queue){
-	/*printf("RR_ON_INTERRUPT BEGIN\n");*/
 	rr_cpu[evt_proc->cpu] = 1;
 	sem_post(&rr_cpu_available);
-	/*printf("RR_ON_INTERRUPT END\n");*/
 }
 
 /* Priority Scheduling */
