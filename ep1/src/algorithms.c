@@ -271,10 +271,10 @@ void rr_send_interrupt(void *args){
 void rr_loop(void *args){
 	int i;
 	RRLoopArgs *thread_args = args;
-	//LinkedList *ready_processes = thread_args->ready_processes;
-	/*LinkedList *running_processes = thread_args->running_processes;*/
+	LinkedList *ready_processes = thread_args->ready_processes;
+	LinkedList *running_processes = thread_args->running_processes;
 	EventQueue *event_queue = thread_args->event_queue;
-	int quantum_ms = 1000;
+	int quantum_ms = 500;
 	pthread_t interrupt_threads[256];
 	int threads_count = 0;
 
@@ -284,8 +284,23 @@ void rr_loop(void *args){
 	while(1){
 		//wait for cpu
 		sem_wait(&rr_cpu_available);		
-		proc = ll_remove_index(&rr_queue, 0);
-		assert( proc->state == READY );
+		do {
+			printf("HERE ");
+			printf("rr_queue = ");
+			ll_print(&rr_queue);	
+			printf("RUNING processes");
+			ll_print(running_processes);
+			printf("READY processes");
+			ll_print(ready_processes);
+			proc = ll_remove_index(&rr_queue, 0);
+			printf(">THRE rr_queue = ");
+			ll_print(&rr_queue);	
+			printf(">RUNING processes");
+			ll_print(running_processes);
+			printf(">READY processes");
+			ll_print(ready_processes);
+		} while( proc->state != READY);
+		//assert( proc->state == READY );
 		/*printf("REMOVE [%d-%s]\n", proc->id, proc->info->process_name);*/
 
 		for(i=0; i<g_total_cpus; i++){
@@ -319,34 +334,36 @@ void rr_init(LinkedList *ready_processes, LinkedList *running_processes, EventQu
 }
 
 void rr_on_ready(ProcessControlBlock **proc_batch, int batch_size, LinkedList *ready_processes, LinkedList *running_processes, EventQueue *event_queue){
-	/*printf("RR_ON_READY BEGIN\n");*/
+	printf("RR_ON_READY BEGIN\n");
 	ll_insert_last_batch(&rr_queue, proc_batch, batch_size);
-	/*printf("RR_QUEUE"); ll_print(&rr_queue);*/
-	/*printf("RR_ON_READY END\n");*/
+	printf("RR_QUEUE"); ll_print(&rr_queue);
+	printf("RR_ON_READY END\n");
 }
 
 void rr_on_exit(ProcessControlBlock *evt_proc, LinkedList *ready_processes, LinkedList *running_processes, EventQueue *event_queue){
-	/*printf("RR_ON_EXIT BEGIN\n");*/
+	printf("RR_ON_EXIT BEGIN\n");
 	LLNode *node = ll_find(&rr_queue, evt_proc->id);
 	if(node){
-		/*printf("REMOVING above\n");*/
+		printf("REMOVING above\n");
 		ll_remove(&rr_queue, evt_proc->id);
 	}
-	/*else{*/
-		/*printf("NOT FOUND\n");*/
-	/*}*/
+	else{
+		printf("NOT FOUND [%d-%s]\n", evt_proc->id, evt_proc->info->process_name);
+	}
 
-	/*printf("RR_QUEUE");*/
-	/*ll_print(&rr_queue);*/
+	printf("RR_QUEUE");
+	ll_print(&rr_queue);
 
 	rr_cpu[evt_proc->cpu] = 1;
 	sem_post(&rr_cpu_available);
-	/*printf("RR_ON_EXIT END\n");*/
+	printf("RR_ON_EXIT END\n");
 }
 
 void rr_on_interrupt(ProcessControlBlock *evt_proc, LinkedList *ready_processes, LinkedList *running_processes, EventQueue *event_queue){
+	printf("RR_ON_INTERRUPT BEGIN\n");
 	rr_cpu[evt_proc->cpu] = 1;
 	sem_post(&rr_cpu_available);
+	printf("RR_ON_INTERRUPT END\n");
 }
 
 /* Priority Scheduling */
