@@ -79,10 +79,10 @@ void _ll_insert_last(LinkedList *q, LL_DATA_TYPE b){
 	last->prev = cur;
 
 	q->size++;
+	sem_post(&q->_size);
 	/*printf("AFTER INSERT");*/
 	/*ll_print(q);*/
 
-	sem_post(&q->_size);
 }
 
 void ll_insert_last(LinkedList *q, LL_DATA_TYPE b){
@@ -125,6 +125,13 @@ LLNode *ll_find_index(LinkedList *q, int index){
 	return ((LLNode *)NULL);	
 }
 
+int ll_in(LinkedList *q, int id){
+	if(ll_find(q,id))
+		return 1;
+	else
+		return 0;
+}
+
 LL_DATA_TYPE _ll_remove_node(LinkedList *q, LLNode *node){
 	LL_DATA_TYPE result;
 
@@ -159,8 +166,12 @@ LL_DATA_TYPE ll_remove_index(LinkedList *q, int index){
 }
 
 LL_DATA_TYPE ll_remove(LinkedList *q, int id){
-	sem_wait(&q->_size);
-	pthread_mutex_lock(&q->mutex);
+	/*int tmp;*/
+	/*sem_getvalue(&q->_size, &tmp);*/
+	/*printf("before lock size=%d tmp=%d\n", q->size, tmp);*/
+	//sem_wait(&q->_size);
+	/*printf("after lock\n");*/
+	//pthread_mutex_lock(&q->mutex);
 
 	LL_DATA_TYPE result;
 
@@ -170,16 +181,16 @@ LL_DATA_TYPE ll_remove(LinkedList *q, int id){
 		q->size--;
 	}
 
-	pthread_mutex_unlock(&q->mutex);
+	//pthread_mutex_unlock(&q->mutex);
 	return result;
 }
 
 void ll_print(LinkedList *q){
 	LLNode *cur = q->head;
-	printf("\tQUEUE = [ ");
+	printf("\tQUEUE %d = [ ", q->size);
 	while(cur->next){
 		cur = cur->next;
-		printf("{ %d-%s} ", cur->data->id, cur->data->info->process_name);
+		printf("{ %d-%s-[cpu=%d, state=%d]} ", cur->data->id, cur->data->info->process_name, cur->data->cpu, cur->data->state);
 	}
 	printf("]\n");
 }

@@ -27,6 +27,7 @@ void ll_insert_beginning_batch(LinkedList *q, LL_DATA_TYPE *b, int size);
 void ll_insert_last(LinkedList *q, LL_DATA_TYPE b);
 void ll_insert_last_batch(LinkedList *q, LL_DATA_TYPE *b, int size);
 LLNode *ll_find(LinkedList *q, int id);
+int ll_in(LinkedList *q, int id);
 LLNode *ll_find_index(LinkedList *q, int index);
 LL_DATA_TYPE ll_remove(LinkedList *q, int id);
 LL_DATA_TYPE ll_remove_index(LinkedList *q, int index);

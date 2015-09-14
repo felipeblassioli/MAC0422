@@ -5,7 +5,7 @@
 #include <semaphore.h>
 #include <stdlib.h>
 
-typedef enum {EVT_NONE, EVT_NEW, EVT_CONTEXT_SWITCH, EVT_INTERRUPT, EVT_EXITED, EVT_STOP, EVT_DISPATCH} EventType;
+typedef enum { EVT_NONE, EVT_NEW, EVT_READY, EVT_DISPATCH, EVT_INTERRUPT, EVT_INTERRUPTED, EVT_EXIT, EVT_STOP } EventType;
 typedef struct {
 	EventType type;
 	void *payload;
@@ -19,13 +19,6 @@ typedef struct {
 	int insert_index;
 	int remove_index;
 } EventQueue;
-
-#include "simulator.h"
-typedef struct{
-	ProcessControlBlock *old;
-	ProcessControlBlock *new;
-	int cpu;
-} EventContextSwitchPayload;
 
 void EventQueue_init(EventQueue *q);
 void enqueue(EventQueue *q, EventType type, void *payload);

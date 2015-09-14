@@ -1,10 +1,8 @@
 #ifndef __INCL_SIMULATOR
 #define __INCL_SIMULATOR
 
+#include <pthread.h>
 #define MAX_CPU_NUMBER 64
-#define READY 1
-#define RUNNING 2
-#define FINISHED 3
 
 typedef struct t_traceinfo {
 	double t0, dt, deadline;
@@ -13,6 +11,10 @@ typedef struct t_traceinfo {
 	int line;
 } TraceInfo;
 
+#define NEW 0
+#define READY 1
+#define RUNNING 2
+#define FINISHED 3
 typedef struct {
 	int id;
 	int state;
@@ -20,8 +22,8 @@ typedef struct {
 	TraceInfo *info;
 	int cpu;
 	double et;
+	pthread_t thread;
+	int interrupted;
 } ProcessControlBlock;
 
-#define RTIME_INFINITY 9999.999
-double remaining_time(ProcessControlBlock *);
 #endif

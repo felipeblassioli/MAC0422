@@ -21,7 +21,7 @@ void enqueue(EventQueue *q, EventType type, void *payload){
 	pthread_mutex_unlock(&q->mutex);
 	sem_post(&q->items);
 
-	//printf("\tevt_queue insert_index = %d\n", q->insert_index);
+	/*printf("\tevt_queue insert_index = %d\n", q->insert_index);*/
 }
 
 Event *dequeue(EventQueue *q){
@@ -34,6 +34,6 @@ Event *dequeue(EventQueue *q){
 	pthread_mutex_unlock(&q->mutex);
 	sem_post(&q->slots);
 
-	//printf("\tevt_queue remove_index = %d\n", q->remove_index);
+	/*printf("\tevt_queue remove_index = %d\n", q->remove_index);*/
 	return result;
 }
